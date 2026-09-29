@@ -110,3 +110,24 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+uint64
+sys_dmesg(void)
+{
+  uint64 buf;
+  int n;
+
+  argaddr(0, &buf);
+  argint(1, &n);
+  return klog_copyout(buf, n);
+}
+
+uint64
+sys_trace(void)
+{
+  int mask, ticks;
+
+  argint(0, &mask);
+  argint(1, &ticks);
+  return klog_set_trace(mask, ticks);
+}

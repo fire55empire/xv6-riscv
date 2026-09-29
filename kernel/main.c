@@ -13,6 +13,7 @@ main()
   if (cpuid() == 0) {
     consoleinit();
     printkinit();
+    kloginit();
     printk("\n");
     printk("xv6 kernel is booting\n");
     printk("\n");
