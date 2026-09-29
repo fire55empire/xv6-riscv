@@ -40,6 +40,9 @@ int memcmp(const void *, const void *, uint);
 void *memcpy(void *, const void *, uint);
 char *sbrk(int);
 char *sbrklazy(int);
+int pagetable(void);
+int pgclear(void *, int, int);
+int pgcheck(void *, int, int);
 
 // printf.c
 void fprintf(int, const char *, ...) __attribute__((format(printf, 2, 3)));

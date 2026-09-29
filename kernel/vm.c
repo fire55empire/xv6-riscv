@@ -489,3 +489,59 @@ ismapped(pagetable_t pagetable, uint64 va)
   }
   return 0;
 }
+
+static void
+vmprint_level(pagetable_t pt, int level)
+{
+  char *dots = "........................";
+  char *names = "RWXUGAD";
+  char fl[8];
+  int i, j;
+
+  for (i = 0; i < 512; i++) {
+    pte_t pte = pt[i];
+    if (!(pte & PTE_V))
+      continue;
+    for (j = 0; j < 7; j++)
+      fl[j] = (pte & (2 << j)) ? names[j] : '_';
+    fl[7] = 0;
+    printk("%s0x%x%x%x -> %p %s\n", dots + 24 - level * 8, i >> 8,
+           (i >> 4) & 15, i & 15, (void *)PTE2PA(pte), fl);
+    if (!(pte & (PTE_R | PTE_W | PTE_X)))
+      vmprint_level((pagetable_t)PTE2PA(pte), level + 1);
+  }
+}
+
+void
+vmprint(pagetable_t pagetable)
+{
+  printk("PAGETABLE %p\n", pagetable);
+  vmprint_level(pagetable, 0);
+}
+
+// op 0: check, op 1: clear
+int
+uvmflagop(pagetable_t pagetable, uint64 psz, uint64 va, int len, int mask,
+          int op)
+{
+  uint64 a;
+  pte_t *pte;
+  int res = 0;
+
+  if (len < 0 || mask == 0 || (mask & ~(PTE_A | PTE_D)))
+    return -1;
+  if (va + len < va || va + len > psz)
+    return -1;
+
+  for (a = PGROUNDDOWN(va); a < va + len; a += PGSIZE) {
+    pte = walk(pagetable, a, 0);
+    if (pte == 0 || !(*pte & PTE_V))
+      continue;
+    if (op == 0 && (*pte & mask))
+      res = 1;
+    if (op == 1)
+      *pte &= ~mask;
+  }
+  sfence_vma();
+  return res;
+}
