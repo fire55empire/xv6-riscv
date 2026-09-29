@@ -196,10 +196,16 @@ devintr()
     int irq = plic_claim();
 
     if (irq == UART0_IRQ) {
+      if (klog_traced(TRACE_INTR))
+        pr_msg("intr: irq %d UART", irq);
       uartintr();
     } else if (irq == VIRTIO0_IRQ) {
+      if (klog_traced(TRACE_INTR))
+        pr_msg("intr: irq %d virtio", irq);
       virtio_disk_intr();
     } else if (irq) {
+      if (klog_traced(TRACE_INTR))
+        pr_msg("intr: irq %d unknown", irq);
       printk("unexpected interrupt irq=%d\n", irq);
     }
 

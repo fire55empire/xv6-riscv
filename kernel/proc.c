@@ -293,6 +293,10 @@ kfork(void)
 
   release(&np->lock);
 
+  if (klog_traced(TRACE_PROC))
+    pr_msg("proc: pid %d (%s) created child pid %d (%s)", p->pid, p->name,
+           pid, np->name);
+
   acquire(&wait_lock);
   np->parent = p;
   release(&wait_lock);
@@ -345,6 +349,10 @@ kexit(int status)
   p->cwd = 0;
 
   acquire(&wait_lock);
+
+  if (klog_traced(TRACE_PROC))
+    pr_msg("proc: pid %d (%s) exits with status %d, parent pid %d", p->pid,
+           p->name, status, p->parent->pid);
 
   // Give any children to init.
   reparent(p);

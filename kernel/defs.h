@@ -1,4 +1,6 @@
 // clang-format off
+#include <stdarg.h>
+
 struct buf;
 struct context;
 struct file;
@@ -77,6 +79,13 @@ int             pipewrite(struct pipe*, uint64, int);
 int             printk(char*, ...) __attribute__ ((format (printf, 1, 2)));
 void            panic(char*) __attribute__((noreturn));
 void            printkinit(void);
+void            vformat(void (*)(int), const char*, va_list);
+
+void            kloginit(void);
+void            pr_msg(const char*, ...) __attribute__ ((format (printf, 1, 2)));
+int             klog_traced(int);
+int             klog_set_trace(int, int);
+int             klog_copyout(uint64, int);
 
 // proc.c
 int             cpuid(void);

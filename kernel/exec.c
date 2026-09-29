@@ -129,6 +129,9 @@ kexec(char *path, char **argv)
       last = s + 1;
   safestrcpy(p->name, last, sizeof(p->name));
 
+  if (klog_traced(TRACE_EXEC))
+    pr_msg("exec: pid %d starts %s", p->pid, path);
+
   // Commit to the user image.
   oldpagetable = p->pagetable;
   p->pagetable = pagetable;

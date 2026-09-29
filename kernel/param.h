@@ -12,3 +12,10 @@
 #define FSSIZE      2000              // size of file system in blocks
 #define MAXPATH     128               // maximum file path name
 #define USERSTACK   1                 // user stack pages
+#define PR_MSG_PAGES 2
+
+#define TRACE_SYSCALL (1 << 0)
+#define TRACE_INTR    (1 << 1)
+#define TRACE_PROC    (1 << 2)
+#define TRACE_EXEC    (1 << 3)
+#define TRACE_ALL     (TRACE_SYSCALL | TRACE_INTR | TRACE_PROC | TRACE_EXEC)
