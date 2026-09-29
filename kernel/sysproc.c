@@ -110,3 +110,36 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+uint64
+sys_pagetable(void)
+{
+  vmprint(myproc()->pagetable);
+  return 0;
+}
+
+uint64
+sys_pgclear(void)
+{
+  uint64 va;
+  int n, mask;
+  struct proc *p = myproc();
+
+  argaddr(0, &va);
+  argint(1, &n);
+  argint(2, &mask);
+  return uvmflagop(p->pagetable, p->sz, va, n, mask, 1);
+}
+
+uint64
+sys_pgcheck(void)
+{
+  uint64 va;
+  int n, mask;
+  struct proc *p = myproc();
+
+  argaddr(0, &va);
+  argint(1, &n);
+  argint(2, &mask);
+  return uvmflagop(p->pagetable, p->sz, va, n, mask, 0);
+}
