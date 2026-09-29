@@ -145,6 +145,12 @@ void            trapinithart(void);
 extern struct spinlock tickslock;
 void            prepare_return(void);
 
+// rtc.c
+void            rtcinit(void);
+uint32          rtc_read_low(void);
+uint32          rtc_read_high(void);
+uint64          rtc_read(void);
+
 // uart.c
 void            uartinit(void);
 void            uartintr(void);

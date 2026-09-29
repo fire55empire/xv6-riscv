@@ -7,6 +7,7 @@ OBJS = \
   $K/console.o \
   $K/printk.o \
   $K/uart.o \
+  $K/rtc.o \
   $K/kalloc.o \
   $K/spinlock.o \
   $K/string.o \
@@ -150,6 +151,7 @@ UPROGS=\
 	$U/_forphan\
 	$U/_dorphan\
 	$U/_sync\
+	$U/_date\
 
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)
@@ -174,7 +176,10 @@ ifndef CPUS
 CPUS := 3
 endif
 
+RTCBASE ?= localtime
+
 QEMUOPTS = -machine virt -bios none -kernel $K/kernel -m 128M -smp $(CPUS) -nographic
+QEMUOPTS += -rtc base=$(RTCBASE)
 QEMUOPTS += -global virtio-mmio.force-legacy=false
 QEMUOPTS += -drive file=fs.img,if=none,format=raw,id=x0
 QEMUOPTS += -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
