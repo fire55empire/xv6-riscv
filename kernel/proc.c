@@ -5,6 +5,7 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "defs.h"
+#include "procinfo.h"
 
 struct cpu cpus[NCPU];
 
@@ -638,6 +639,66 @@ killed(struct proc *p)
   k = p->killed;
   release(&p->lock);
   return k;
+}
+
+int
+ps_listinfo(uint64 addr, int lim)
+{
+  struct proc *cp = myproc();
+  struct proc *p;
+  struct procinfo info;
+  int cnt;
+  int wrote;
+  uint64 dst;
+
+  if (addr == 0) {
+    cnt = 0;
+    for (p = proc; p < &proc[NPROC]; p++) {
+      acquire(&p->lock);
+      if (p->state != UNUSED) {
+        cnt = cnt + 1;
+      }
+      release(&p->lock);
+    }
+    return cnt;
+  }
+
+  cnt = 0;
+  wrote = 0;
+  acquire(&wait_lock);
+  for (p = proc; p < &proc[NPROC]; p++) {
+    acquire(&p->lock);
+    if (p->state == UNUSED) {
+      release(&p->lock);
+      continue;
+    }
+
+    info.pid = p->pid;
+    safestrcpy(info.name, p->name, sizeof(info.name));
+    info.state = p->state;
+    if (p->parent)
+      info.ppid = p->parent->pid;
+    else
+      info.ppid = 0;
+
+    release(&p->lock);
+    cnt++;
+
+    if (cnt <= lim) {
+      dst = addr + (cnt - 1) * sizeof(struct procinfo);
+      if (copyout(cp->pagetable, cp->sz, dst, (char *)&info, sizeof(info)) <
+          0) {
+        release(&wait_lock);
+        return PS_ERR_FAULT;
+      }
+      wrote++;
+    }
+  }
+  release(&wait_lock);
+
+  if (cnt > lim)
+    return PS_ERR_TOOBIG;
+  return wrote;
 }
 
 // Copy to either a user address, or kernel address,

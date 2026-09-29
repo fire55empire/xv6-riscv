@@ -98,6 +98,17 @@ sys_kill(void)
   return kkill(pid);
 }
 
+uint64
+sys_ps_listinfo(void)
+{
+  uint64 addr;
+  int lim;
+
+  argaddr(0, &addr);
+  argint(1, &lim);
+  return ps_listinfo(addr, lim);
+}
+
 // return how many clock tick interrupts have occurred
 // since start.
 uint64
