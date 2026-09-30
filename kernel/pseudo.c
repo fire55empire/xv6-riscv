@@ -9,25 +9,29 @@
 
 #define CHUNK 128
 
+char zeros[CHUNK];
+
 struct {
   struct spinlock lock;
   uint64 seed;
+} urand;
+
+struct {
+  struct spinlock lock;
   uint64 nbytes;
-} pseudo;
+} nstat;
 
 int
 readzero(int user_dst, uint64 dst, int n)
 {
-  char buf[CHUNK];
   int done = 0;
   int m;
 
-  memset(buf, 0, sizeof(buf));
   while (done < n) {
     m = n - done;
     if (m > CHUNK)
       m = CHUNK;
-    if (either_copyout(user_dst, dst + done, buf, m) == -1)
+    if (either_copyout(user_dst, dst + done, zeros, m) == -1)
       break;
     done += m;
   }
@@ -45,12 +49,12 @@ readurandom(int user_dst, uint64 dst, int n)
     m = n - done;
     if (m > CHUNK)
       m = CHUNK;
-    acquire(&pseudo.lock);
+    acquire(&urand.lock);
     for (i = 0; i < m; i++) {
-      pseudo.seed = pseudo.seed * 6364136223846793005ULL + 1442695040888963407ULL;
-      buf[i] = (pseudo.seed >> 56) & 0xFF;
+      urand.seed = urand.seed * 6364136223846793005ULL + 1442695040888963407ULL;
+      buf[i] = (urand.seed >> 56) & 0xFF;
     }
-    release(&pseudo.lock);
+    release(&urand.lock);
     if (either_copyout(user_dst, dst + done, buf, m) == -1)
       break;
     done += m;
@@ -65,9 +69,9 @@ readnullstat(int user_dst, uint64 dst, int n)
 
   if (n != sizeof(v))
     return -1;
-  acquire(&pseudo.lock);
-  v = pseudo.nbytes;
-  release(&pseudo.lock);
+  acquire(&nstat.lock);
+  v = nstat.nbytes;
+  release(&nstat.lock);
   if (either_copyout(user_dst, dst, &v, sizeof(v)) == -1)
     return -1;
   return n;
@@ -82,18 +86,18 @@ writeurandom(int user_src, uint64 src, int n)
     return -1;
   if (either_copyin(&s, user_src, src, sizeof(s)) == -1)
     return -1;
-  acquire(&pseudo.lock);
-  pseudo.seed = s;
-  release(&pseudo.lock);
+  acquire(&urand.lock);
+  urand.seed = s;
+  release(&urand.lock);
   return n;
 }
 
 int
 writenullstat(int n)
 {
-  acquire(&pseudo.lock);
-  pseudo.nbytes += n;
-  release(&pseudo.lock);
+  acquire(&nstat.lock);
+  nstat.nbytes += n;
+  release(&nstat.lock);
   return n;
 }
 
@@ -126,9 +130,10 @@ pseudowrite(int user_src, int minor, uint64 src, int n)
 void
 pseudoinit(void)
 {
-  initlock(&pseudo.lock, "pseudo");
-  pseudo.seed = 1;
-  pseudo.nbytes = 0;
+  initlock(&urand.lock, "urandom");
+  initlock(&nstat.lock, "nullstat");
+  urand.seed = 1;
+  nstat.nbytes = 0;
 
   devsw[PSEUDO].read = pseudoread;
   devsw[PSEUDO].write = pseudowrite;
