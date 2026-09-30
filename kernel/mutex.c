@@ -72,22 +72,9 @@ mutexlock(struct sleeplock *lk)
 int
 mutexunlock(struct sleeplock *lk)
 {
-  struct proc *p = myproc();
-
-  acquire(&lk->lk);
-
-  if (lk->locked == 0) {
-    release(&lk->lk);
+  if (!holdingsleep(lk))
     return -1;
-  }
-  if (lk->pid != p->pid) {
-    release(&lk->lk);
-    return -1;
-  }
 
-  lk->locked = 0;
-  lk->pid = 0;
-  wakeup(lk);
-  release(&lk->lk);
+  releasesleep(lk);
   return 0;
 }
